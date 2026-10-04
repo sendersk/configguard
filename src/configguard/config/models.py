@@ -19,8 +19,19 @@ class ServerConfig(BaseModel):
     port: int = Field(ge=1, le=65535)
 
 
+class DatabaseConfig(BaseModel):
+    """Represent application database configuration."""
+
+    host: str = Field(min_length=1)
+    port: int = Field(default=5432, ge=1, le=65535)
+    name: str = Field(min_length=1)
+    username: str = Field(min_length=1)
+    password: str | None = None
+
+
 class AppConfig(BaseModel):
     """Represent the root application configuration."""
 
     application: ApplicationConfig
     server: ServerConfig
+    database: DatabaseConfig
