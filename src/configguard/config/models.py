@@ -1,8 +1,19 @@
 """Pydantic models for application configuration."""
 
+from enum import StrEnum
 from typing import Literal
 
 from pydantic import BaseModel, Field
+
+
+class LogLevel(StrEnum):
+    """Represent supported logging levels."""
+
+    DEBUG = "DEBUG"
+    INFO = "INFO"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
+    CRITICAL = "CRITICAL"
 
 
 class ApplicationConfig(BaseModel):
@@ -29,9 +40,16 @@ class DatabaseConfig(BaseModel):
     password: str | None = None
 
 
+class LoggingConfig(BaseModel):
+    """Represent application logging configuration."""
+
+    level: LogLevel = LogLevel.INFO
+
+
 class AppConfig(BaseModel):
     """Represent the root application configuration."""
 
     application: ApplicationConfig
     server: ServerConfig
     database: DatabaseConfig
+    logging: LoggingConfig
