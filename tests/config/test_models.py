@@ -3,7 +3,11 @@
 import pytest
 from pydantic import ValidationError
 
-from configguard.config.models import AppConfig, LoggingConfig, LogLevel
+from configguard.config.models import (
+    AppConfig,
+    LoggingConfig,
+    LogLevel,
+)
 
 
 def valid_database_configuration() -> dict[str, object]:
@@ -22,10 +26,10 @@ def valid_logging_configuration() -> dict[str, str]:
     return {"level": "INFO"}
 
 
-def test_app_config_accepts_valid_configuration() -> None:
-    """Verify that a valid configuration is accepted."""
+def valid_app_config() -> AppConfig:
+    """Return a valid application configuration."""
 
-    config = AppConfig(
+    return AppConfig(
         application={
             "name": "payment-api",
             "environment": "production",
@@ -38,8 +42,43 @@ def test_app_config_accepts_valid_configuration() -> None:
         logging=valid_logging_configuration(),
     )
 
+
+def test_app_config_accepts_valid_configuration() -> None:
+    """Verify that a valid configuration is accepted."""
+
+    config = valid_app_config()
+
     assert config.application.name == "payment-api"
     assert config.application.environment == "production"
+
+
+def test_app_config_accepts_valid_server_configuration() -> None:
+    """Verify that a valid server configuration is accepted."""
+
+    config = valid_app_config()
+
+    assert config.server.host == "0.0.0.0"
+    assert config.server.port == 8080
+
+
+def test_app_config_accepts_valid_database_configuration() -> None:
+    """Verify that a valid database configuration is accepted."""
+
+    config = valid_app_config()
+
+    assert config.database.host == "db.internal"
+    assert config.database.port == 5432
+    assert config.database.name == "payments"
+    assert config.database.username == "payment_user"
+    assert config.database.password is None
+
+
+def test_app_config_accepts_valid_logging_configuration() -> None:
+    """Verify that a valid logging configuration is accepted."""
+
+    config = valid_app_config()
+
+    assert config.logging.level == LogLevel.INFO
 
 
 def test_app_config_rejects_empty_application_name() -> None:
@@ -50,6 +89,10 @@ def test_app_config_rejects_empty_application_name() -> None:
             application={
                 "name": "",
                 "environment": "production",
+            },
+            server={
+                "host": "0.0.0.0",
+                "port": 8080,
             },
             database=valid_database_configuration(),
             logging=valid_logging_configuration(),
@@ -65,29 +108,13 @@ def test_app_config_rejects_invalid_environment() -> None:
                 "name": "payment-api",
                 "environment": "prod",
             },
+            server={
+                "host": "0.0.0.0",
+                "port": 8080,
+            },
             database=valid_database_configuration(),
             logging=valid_logging_configuration(),
         )
-
-
-def test_app_config_accepts_valid_server_configuration() -> None:
-    """Verify that a valid server configuration is accepted."""
-
-    config = AppConfig(
-        application={
-            "name": "payment-api",
-            "environment": "production",
-        },
-        server={
-            "host": "0.0.0.0",
-            "port": 8080,
-        },
-        database=valid_database_configuration(),
-        logging=valid_logging_configuration(),
-    )
-
-    assert config.server.host == "0.0.0.0"
-    assert config.server.port == 8080
 
 
 @pytest.mark.parametrize("port", [0, -1, 65536, 100000])
@@ -125,48 +152,6 @@ def test_app_config_rejects_empty_server_host() -> None:
             database=valid_database_configuration(),
             logging=valid_logging_configuration(),
         )
-
-
-def test_app_config_accepts_valid_database_configuration() -> None:
-    """Verify that a valid database configuration is accepted."""
-
-    config = AppConfig(
-        application={
-            "name": "payment-api",
-            "environment": "production",
-        },
-        server={
-            "host": "0.0.0.0",
-            "port": 8080,
-        },
-        database=valid_database_configuration(),
-        logging=valid_logging_configuration(),
-    )
-
-    assert config.database.host == "db.internal"
-    assert config.database.port == 5432
-    assert config.database.name == "payments"
-    assert config.database.username == "payment_user"
-    assert config.database.password is None
-
-
-def test_database_port_defaults_to_postgresql_port() -> None:
-    """Verify that the default database port is PostgreSQL's standard port."""
-
-    config = AppConfig(
-        application={
-            "name": "payment-api",
-            "environment": "production",
-        },
-        server={
-            "host": "0.0.0.0",
-            "port": 8080,
-        },
-        database=valid_database_configuration(),
-        logging=valid_logging_configuration(),
-    )
-
-    assert config.database.port == 5432
 
 
 @pytest.mark.parametrize("port", [0, -1, 65536, 100000])
@@ -212,23 +197,12 @@ def test_app_config_rejects_empty_database_host() -> None:
         )
 
 
-def test_app_config_accepts_valid_logging_configuration() -> None:
-    """Verify that a valid logging configuration is accepted."""
+def test_database_port_defaults_to_postgresql_port() -> None:
+    """Verify that the default database port is PostgreSQL's standard port."""
 
-    config = AppConfig(
-        application={
-            "name": "payment-api",
-            "environment": "production",
-        },
-        server={
-            "host": "0.0.0.0",
-            "port": 8080,
-        },
-        database=valid_database_configuration(),
-        logging=valid_logging_configuration(),
-    )
+    config = valid_app_config()
 
-    assert config.logging.level == LogLevel.INFO
+    assert config.database.port == 5432
 
 
 def test_logging_level_defaults_to_info() -> None:
