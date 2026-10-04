@@ -13,7 +13,11 @@ def test_app_config_accepts_valid_configuration() -> None:
         application={
             "name": "payment-api",
             "environment": "production",
-        }
+        },
+        server={
+            "host": "0.0.0.0",
+            "port": 8080,
+        },
     )
 
     assert config.application.name == "payment-api"
