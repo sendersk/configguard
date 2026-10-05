@@ -278,3 +278,33 @@ def test_validate_configuration_preserves_multiple_errors() -> None:
         ("server", "port"),
         ("database", "host"),
     }
+
+
+def test_validate_configuration_error_contains_message() -> None:
+    """Verify that validation errors contain human-readable messages."""
+
+    data = valid_configuration()
+    data["server"]["port"] = 70000
+
+    with pytest.raises(ConfigurationValidationError) as exc_info:
+        validate_configuration(data)
+
+    error = exc_info.value.errors[0]
+
+    assert "port" in str(error["loc"])
+    assert "less than or equal to 65535" in str(error["msg"])
+
+
+def test_validate_configuration_error_contains_error_type() -> None:
+    """Verify that validation errors contain error types."""
+
+    data = valid_configuration()
+    data["application"]["environment"] = "invalid"
+
+    with pytest.raises(ConfigurationValidationError) as exc_info:
+        validate_configuration(data)
+
+    error = exc_info.value.errors[0]
+
+    assert error["loc"] == ("application", "environment")
+    assert error["type"] == "literal_error"
