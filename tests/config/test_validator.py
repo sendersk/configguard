@@ -353,3 +353,32 @@ def test_validate_configuration_allows_localhost_outside_production(
     result = validate_configuration(data)
 
     assert result.server.host == "localhost"
+
+
+@pytest.mark.parametrize(
+    "host",
+    [
+        "localhost",
+        "127.0.0.1",
+    ],
+)
+def test_validate_configuration_reports_production_host_error(
+    host: str,
+) -> None:
+    """Verify that production host validation reports a structured error."""
+
+    data = valid_configuration()
+    data["application"]["environment"] = "production"
+    data["server"]["host"] = host
+
+    with pytest.raises(ConfigurationValidationError) as exc_info:
+        validate_configuration(data)
+
+    errors = exc_info.value.errors
+
+    assert len(errors) == 1
+    assert errors[0]["type"] == "value_error"
+    assert (
+        "Production applications must not use localhost"
+        in str(errors[0]["msg"])
+    )
