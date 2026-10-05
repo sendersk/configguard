@@ -3,7 +3,7 @@
 from enum import StrEnum
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class LogLevel(StrEnum):
@@ -53,3 +53,18 @@ class AppConfig(BaseModel):
     server: ServerConfig
     database: DatabaseConfig
     logging: LoggingConfig
+
+    @model_validator(mode="after")
+    def validate_production_server(self) -> "AppConfig":
+        """Ensure production applications do not use localhost."""
+
+        if (
+            self.application.environment == "production"
+            and self.server.host in {"localhost", "127.0.0.1"}
+        ):
+            raise ValueError(
+                "Production applications must not use localhost "
+                "or 127.0.0.1 as the server host."
+            )
+
+        return self
