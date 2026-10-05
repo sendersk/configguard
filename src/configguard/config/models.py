@@ -55,8 +55,8 @@ class AppConfig(BaseModel):
     logging: LoggingConfig
 
     @model_validator(mode="after")
-    def validate_production_server(self) -> "AppConfig":
-        """Ensure production applications do not use localhost."""
+    def validate_production_configuration(self) -> "AppConfig":
+        """Validate production-specific configuration rules."""
 
         if (
             self.application.environment == "production"
