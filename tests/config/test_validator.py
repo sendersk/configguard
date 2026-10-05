@@ -244,3 +244,37 @@ def test_validate_configuration_rejects_invalid_log_level(
         match="Configuration validation failed",
     ):
         validate_configuration(data)
+
+
+def test_validate_configuration_preserves_validation_errors() -> None:
+    """Verify that structured validation errors are preserved."""
+
+    data = valid_configuration()
+    data["server"]["port"] = 70000
+
+    with pytest.raises(ConfigurationValidationError) as exc_info:
+        validate_configuration(data)
+
+    assert exc_info.value.errors
+    assert exc_info.value.errors[0]["loc"] == ("server", "port")
+
+
+def test_validate_configuration_preserves_multiple_errors() -> None:
+    """Verify that multiple validation errors are preserved."""
+
+    data = valid_configuration()
+    data["application"]["name"] = ""
+    data["server"]["port"] = 70000
+    data["database"]["host"] = ""
+
+    with pytest.raises(ConfigurationValidationError) as exc_info:
+        validate_configuration(data)
+
+    errors = exc_info.value.errors
+
+    assert len(errors) == 3
+    assert {error["loc"] for error in errors} == {
+        ("application", "name"),
+        ("server", "port"),
+        ("database", "host"),
+    }
