@@ -109,3 +109,138 @@ def test_validate_configuration_rejects_invalid_server_port() -> None:
         match="Configuration validation failed",
     ):
         validate_configuration(data)
+
+
+@pytest.mark.parametrize(
+    "environment",
+    [
+        "local",
+        "development2",
+        "prod",
+        "",
+    ],
+)
+def test_validate_configuration_rejects_invalid_environment(
+    environment: str,
+) -> None:
+    """Verify that unsupported environments are rejected."""
+
+    data = valid_configuration()
+    data["application"]["environment"] = environment
+
+    with pytest.raises(
+        ConfigurationValidationError,
+        match="Configuration validation failed",
+    ):
+        validate_configuration(data)
+
+
+@pytest.mark.parametrize(
+    "port",
+    [
+        0,
+        -1,
+        65536,
+        100000,
+    ],
+)
+def test_validate_configuration_rejects_invalid_server_ports(
+    port: int,
+) -> None:
+    """Verify that invalid server ports are rejected."""
+
+    data = valid_configuration()
+    data["server"]["port"] = port
+
+    with pytest.raises(
+        ConfigurationValidationError,
+        match="Configuration validation failed",
+    ):
+        validate_configuration(data)
+
+
+def test_validate_configuration_rejects_empty_application_name() -> None:
+    """Verify that an empty application name is rejected."""
+
+    data = valid_configuration()
+    data["application"]["name"] = ""
+
+    with pytest.raises(
+        ConfigurationValidationError,
+        match="Configuration validation failed",
+    ):
+        validate_configuration(data)
+
+
+def test_validate_configuration_rejects_empty_server_host() -> None:
+    """Verify that an empty server host is rejected."""
+
+    data = valid_configuration()
+    data["server"]["host"] = ""
+
+    with pytest.raises(
+        ConfigurationValidationError,
+        match="Configuration validation failed",
+    ):
+        validate_configuration(data)
+
+
+@pytest.mark.parametrize(
+    "port",
+    [
+        0,
+        -1,
+        65536,
+        100000,
+    ],
+)
+def test_validate_configuration_rejects_invalid_database_ports(
+    port: int,
+) -> None:
+    """Verify that invalid database ports are rejected."""
+
+    data = valid_configuration()
+    data["database"]["port"] = port
+
+    with pytest.raises(
+        ConfigurationValidationError,
+        match="Configuration validation failed",
+    ):
+        validate_configuration(data)
+
+
+def test_validate_configuration_rejects_empty_database_host() -> None:
+    """Verify that an empty database host is rejected."""
+
+    data = valid_configuration()
+    data["database"]["host"] = ""
+
+    with pytest.raises(
+        ConfigurationValidationError,
+        match="Configuration validation failed",
+    ):
+        validate_configuration(data)
+
+
+@pytest.mark.parametrize(
+    "level",
+    [
+        "TRACE",
+        "trace",
+        "INVALID",
+        "",
+    ],
+)
+def test_validate_configuration_rejects_invalid_log_level(
+    level: str,
+) -> None:
+    """Verify that unsupported logging levels are rejected."""
+
+    data = valid_configuration()
+    data["logging"]["level"] = level
+
+    with pytest.raises(
+        ConfigurationValidationError,
+        match="Configuration validation failed",
+    ):
+        validate_configuration(data)
