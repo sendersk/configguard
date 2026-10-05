@@ -308,3 +308,48 @@ def test_validate_configuration_error_contains_error_type() -> None:
 
     assert error["loc"] == ("application", "environment")
     assert error["type"] == "literal_error"
+
+
+@pytest.mark.parametrize(
+    "host",
+    [
+        "localhost",
+        "127.0.0.1",
+    ],
+)
+def test_validate_configuration_rejects_localhost_in_production(
+    host: str,
+) -> None:
+    """Verify that production cannot use localhost as the server host."""
+
+    data = valid_configuration()
+    data["application"]["environment"] = "production"
+    data["server"]["host"] = host
+
+    with pytest.raises(
+        ConfigurationValidationError,
+        match="Configuration validation failed",
+    ):
+        validate_configuration(data)
+
+
+@pytest.mark.parametrize(
+    "environment",
+    [
+        "development",
+        "testing",
+        "staging",
+    ],
+)
+def test_validate_configuration_allows_localhost_outside_production(
+    environment: str,
+) -> None:
+    """Verify that localhost is allowed outside production."""
+
+    data = valid_configuration()
+    data["application"]["environment"] = environment
+    data["server"]["host"] = "localhost"
+
+    result = validate_configuration(data)
+
+    assert result.server.host == "localhost"
