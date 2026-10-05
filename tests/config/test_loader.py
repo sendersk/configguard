@@ -188,3 +188,108 @@ environment = "production"
         match="Unsupported configuration format",
     ):
         load_configuration(path)
+
+
+def test_load_configuration_accepts_uppercase_json_extension(
+    tmp_path: Path,
+) -> None:
+    """Verify that uppercase JSON extensions are accepted."""
+
+    path = tmp_path / "config.JSON"
+    path.write_text(
+        """
+{
+    "application": {
+        "name": "payment-api",
+        "environment": "production"
+    }
+}
+""",
+        encoding="utf-8",
+    )
+
+    result = load_configuration(path)
+
+    assert result == {
+        "application": {
+            "name": "payment-api",
+            "environment": "production",
+        }
+    }
+
+
+def test_load_configuration_accepts_uppercase_yaml_extension(
+    tmp_path: Path,
+) -> None:
+    """Verify that uppercase YAML extensions are accepted."""
+
+    path = tmp_path / "config.YAML"
+    path.write_text(
+        """
+application:
+  name: payment-api
+  environment: production
+""",
+        encoding="utf-8",
+    )
+
+    result = load_configuration(path)
+
+    assert result == {
+        "application": {
+            "name": "payment-api",
+            "environment": "production",
+        }
+    }
+
+
+def test_load_configuration_rejects_empty_json_file(
+    tmp_path: Path,
+) -> None:
+    """Verify that an empty JSON file is rejected."""
+
+    path = tmp_path / "config.json"
+    path.write_text("", encoding="utf-8")
+
+    with pytest.raises(
+        ConfigurationLoadError,
+        match="Invalid JSON configuration",
+    ):
+        load_configuration(path)
+
+
+def test_load_configuration_rejects_json_list_root(
+    tmp_path: Path,
+) -> None:
+    """Verify that a JSON list root is rejected."""
+
+    path = tmp_path / "config.json"
+    path.write_text(
+        """
+[
+    "application"
+]
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        ConfigurationLoadError,
+        match="Configuration root must be a mapping",
+    ):
+        load_configuration(path)
+
+
+def test_load_configuration_rejects_json_scalar_root(
+    tmp_path: Path,
+) -> None:
+    """Verify that a JSON scalar root is rejected."""
+
+    path = tmp_path / "config.json"
+    path.write_text('"configuration"', encoding="utf-8")
+
+    with pytest.raises(
+        ConfigurationLoadError,
+        match="Configuration root must be a mapping",
+    ):
+        load_configuration(path)
