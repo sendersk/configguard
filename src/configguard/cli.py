@@ -5,8 +5,8 @@ from pathlib import Path
 
 import typer
 
-from configguard.config.result import ValidationResult
 from configguard.config.loader import ConfigurationLoadError, load_configuration
+from configguard.config.result import ValidationResult
 from configguard.config.validator import (
     ConfigurationValidationError,
     validate_configuration,
@@ -74,7 +74,7 @@ def validate(
     except ConfigurationValidationError as error:
         result = ValidationResult.from_errors(error.errors)
         typer.echo(format_human_result(result))
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
     result = ValidationResult(valid=True)
     typer.echo(format_human_result(result))
