@@ -115,3 +115,74 @@ logging:
 
     assert result.exit_code == 1
     assert result.stderr.strip() == "Configuration is invalid."
+
+
+def test_validate_command_reports_configuration_errors(
+    tmp_path: Path,
+) -> None:
+    """Verify that the CLI reports configuration validation errors."""
+
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text(
+        """
+application:
+  name: payment-api
+  environment: production
+server:
+  host: 0.0.0.0
+  port: 70000
+database:
+  host: db.internal
+  name: payments
+  username: payment_user
+logging:
+  level: INFO
+""".strip(),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(app, ["validate", str(config_file)])
+
+    assert result.exit_code == 1
+    assert "Configuration is invalid." in result.stdout
+    assert "Errors:" in result.stdout
+    assert "server.port" in result.stdout
+    assert "less than or equal to 65535" in result.stdout
+
+
+def test_validate_command_reports_multiple_configuration_errors(
+    tmp_path: Path,
+) -> None:
+    """Verify that the CLI reports multiple validation errors."""
+
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text(
+        """
+application:
+  name: ""
+  environment: invalid
+server:
+  host: ""
+  port: 70000
+database:
+  host: ""
+  port: 0
+  name: payments
+  username: payment_user
+logging:
+  level: INFO
+""".strip(),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(app, ["validate", str(config_file)])
+
+    assert result.exit_code == 1
+    assert "Configuration is invalid." in result.stdout
+    assert "Errors:" in result.stdout
+    assert "application.name" in result.stdout
+    assert "application.environment" in result.stdout
+    assert "server.host" in result.stdout
+    assert "server.port" in result.stdout
+    assert "database.host" in result.stdout
+    assert "database.port" in result.stdout
