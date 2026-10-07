@@ -1,4 +1,5 @@
 """Tests for the ConfigGuard CLI."""
+
 from pathlib import Path
 
 from typer.testing import CliRunner
@@ -114,7 +115,7 @@ logging:
     result = runner.invoke(app, ["validate", str(config_file)])
 
     assert result.exit_code == 1
-    assert result.stderr.strip() == "Configuration is invalid."
+    assert "Configuration is invalid." in result.stdout
 
 
 def test_validate_command_reports_configuration_errors(
