@@ -6,6 +6,10 @@ from pathlib import Path
 import typer
 
 from configguard.config.loader import ConfigurationLoadError, load_configuration
+from configguard.config.validator import (
+    ConfigurationValidationError,
+    validate_configuration,
+)
 
 
 def version_callback(value: bool) -> None:
@@ -58,9 +62,15 @@ def validate(
         raise typer.Exit(code=2)
 
     try:
-        load_configuration(config_file)
+        data = load_configuration(config_file)
     except ConfigurationLoadError as error:
         typer.echo(str(error), err=True)
         raise typer.Exit(code=2) from error
 
-    typer.echo(f"Configuration loaded: {config_file}")
+    try:
+        validate_configuration(data)
+    except ConfigurationValidationError:
+        typer.echo("Configuration is invalid.", err=True)
+        raise typer.Exit(code=1)
+
+    typer.echo("Configuration is valid.")
