@@ -5,6 +5,8 @@ from pathlib import Path
 
 import typer
 
+from configguard.config.loader import ConfigurationLoadError, load_configuration
+
 
 def version_callback(value: bool) -> None:
     """Display the application version and exit."""
@@ -55,4 +57,10 @@ def validate(
         )
         raise typer.Exit(code=2)
 
-    typer.echo(f"Configuration file: {config_file}")
+    try:
+        load_configuration(config_file)
+    except ConfigurationLoadError as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=2) from error
+
+    typer.echo(f"Configuration loaded: {config_file}")
