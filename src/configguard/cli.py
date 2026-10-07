@@ -5,11 +5,13 @@ from pathlib import Path
 
 import typer
 
+from configguard.config.result import ValidationResult
 from configguard.config.loader import ConfigurationLoadError, load_configuration
 from configguard.config.validator import (
     ConfigurationValidationError,
     validate_configuration,
 )
+from configguard.output.human import format_human_result
 
 
 def version_callback(value: bool) -> None:
@@ -69,8 +71,10 @@ def validate(
 
     try:
         validate_configuration(data)
-    except ConfigurationValidationError:
-        typer.echo("Configuration is invalid.", err=True)
+    except ConfigurationValidationError as error:
+        result = ValidationResult.from_errors(error.errors)
+        typer.echo(format_human_result(result))
         raise typer.Exit(code=1)
 
-    typer.echo("Configuration is valid.")
+    result = ValidationResult(valid=True)
+    typer.echo(format_human_result(result))
