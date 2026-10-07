@@ -27,36 +27,6 @@ def test_cli_version() -> None:
     assert result.stdout.strip() == "0.1.0"
 
 
-def test_validate_command_loads_configuration_file(
-    tmp_path: Path,
-) -> None:
-    """Verify that the validate command loads an existing file."""
-
-    config_file = tmp_path / "config.yaml"
-    config_file.write_text(
-        """
-application:
-  name: payment-api
-  environment: production
-server:
-  host: 0.0.0.0
-  port: 8080
-database:
-  host: db.internal
-  name: payments
-  username: payment_user
-logging:
-  level: INFO
-""".strip(),
-        encoding="utf-8",
-    )
-
-    result = runner.invoke(app, ["validate", str(config_file)])
-
-    assert result.exit_code == 0
-    assert f"Configuration loaded: {config_file}" in result.stdout
-
-
 def test_validate_command_rejects_missing_configuration_file(
     tmp_path: Path,
 ) -> None:
@@ -87,20 +57,26 @@ def test_validate_command_rejects_invalid_configuration_file(
     assert "Invalid YAML configuration" in result.stderr
 
 
-def test_validate_command_loads_json_configuration(
+def test_validate_command_accepts_valid_configuration(
     tmp_path: Path,
 ) -> None:
-    """Verify that the validate command loads a JSON configuration."""
+    """Verify that the CLI accepts a valid configuration."""
 
-    config_file = tmp_path / "config.json"
+    config_file = tmp_path / "config.yaml"
     config_file.write_text(
         """
-{
-  "application": {
-    "name": "payment-api",
-    "environment": "production"
-  }
-}
+application:
+  name: payment-api
+  environment: production
+server:
+  host: 0.0.0.0
+  port: 8080
+database:
+  host: db.internal
+  name: payments
+  username: payment_user
+logging:
+  level: INFO
 """.strip(),
         encoding="utf-8",
     )
@@ -108,4 +84,34 @@ def test_validate_command_loads_json_configuration(
     result = runner.invoke(app, ["validate", str(config_file)])
 
     assert result.exit_code == 0
-    assert f"Configuration loaded: {config_file}" in result.stdout
+    assert result.stdout.strip() == "Configuration is valid."
+
+
+def test_validate_command_rejects_invalid_configuration(
+    tmp_path: Path,
+) -> None:
+    """Verify that the CLI rejects an invalid configuration."""
+
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text(
+        """
+application:
+  name: payment-api
+  environment: production
+server:
+  host: 0.0.0.0
+  port: 70000
+database:
+  host: db.internal
+  name: payments
+  username: payment_user
+logging:
+  level: INFO
+""".strip(),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(app, ["validate", str(config_file)])
+
+    assert result.exit_code == 1
+    assert result.stderr.strip() == "Configuration is invalid."
