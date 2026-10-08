@@ -187,3 +187,92 @@ logging:
     assert "server.port" in result.stdout
     assert "database.host" in result.stdout
     assert "database.port" in result.stdout
+
+
+def test_validate_command_supports_json_output(
+    tmp_path: Path,
+) -> None:
+    """Verify that the CLI supports JSON output."""
+
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text(
+        """
+application:
+  name: payment-api
+  environment: production
+server:
+  host: 0.0.0.0
+  port: 8080
+database:
+  host: db.internal
+  name: payments
+  username: payment_user
+logging:
+  level: INFO
+""".strip(),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(
+        app,
+        ["validate", str(config_file), "--format", "json"],
+    )
+
+    assert result.exit_code == 0
+    assert '"valid": true' in result.stdout
+    assert '"errors": []' in result.stdout
+
+
+def test_validate_command_reports_json_validation_errors(
+    tmp_path: Path,
+) -> None:
+    """Verify that validation errors can be returned as JSON."""
+
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text(
+        """
+application:
+  name: payment-api
+  environment: production
+server:
+  host: 0.0.0.0
+  port: 70000
+database:
+  host: db.internal
+  name: payments
+  username: payment_user
+logging:
+  level: INFO
+""".strip(),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(
+        app,
+        ["validate", str(config_file), "--format", "json"],
+    )
+
+    assert result.exit_code == 1
+    assert '"valid": false' in result.stdout
+    assert '"server", "port"' in result.stdout
+    assert '"less_than_equal"' in result.stdout
+
+
+def test_validate_command_rejects_unsupported_output_format(
+    tmp_path: Path,
+) -> None:
+    """Verify that the CLI rejects an unsupported output format."""
+
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text(
+        "application: {}",
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(
+        app,
+        ["validate", str(config_file), "--format", "xml"],
+    )
+
+    assert result.exit_code != 0
+    assert "Invalid value" in result.stderr
