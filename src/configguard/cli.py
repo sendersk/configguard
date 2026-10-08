@@ -57,11 +57,18 @@ output_format_option = typer.Option(
     help="Output format.",
 )
 
+strict_option = typer.Option(
+    False,
+    "--strict",
+    help="Enable strict validation.",
+)
+
 
 @app.command()
 def validate(
     config_file: Path = config_file_argument,
     output_format: Literal["human", "json"] = output_format_option,
+    strict: bool = strict_option,
 ) -> None:
     """Validate a configuration file."""
 

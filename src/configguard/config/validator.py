@@ -38,3 +38,32 @@ def validate_configuration(data: dict[str, Any]) -> AppConfig:
         return AppConfig.model_validate(data)
     except ValidationError as error:
         raise ConfigurationValidationError(error.errors()) from error
+
+
+def validate_strict_configuration(config: AppConfig) -> None:
+    """Validate strict configuration rules.
+
+    Args:
+        config: Validated application configuration.
+
+    Raises:
+        ConfigurationValidationError: If strict validation fails.
+    """
+
+    if (
+        config.application.environment == "production"
+        and not config.database.password
+    ):
+        raise ConfigurationValidationError(
+            [
+                {
+                    "type": "value_error",
+                    "loc": ("database", "password"),
+                    "msg": (
+                        "Production configurations require a database "
+                        "password in strict mode."
+                    ),
+                    "input": config.database.password,
+                }
+            ]
+        )
