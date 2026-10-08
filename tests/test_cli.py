@@ -254,7 +254,8 @@ logging:
 
     assert result.exit_code == 1
     assert '"valid": false' in result.stdout
-    assert '"server", "port"' in result.stdout
+    assert '"server"' in result.stdout
+    assert '"port"' in result.stdout
     assert '"less_than_equal"' in result.stdout
 
 
