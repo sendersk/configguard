@@ -3,6 +3,8 @@
 from importlib.metadata import version
 from pathlib import Path
 
+from typing import Literal
+
 import typer
 
 from configguard.config.loader import ConfigurationLoadError, load_configuration
@@ -12,6 +14,7 @@ from configguard.config.validator import (
     validate_configuration,
 )
 from configguard.output.human import format_human_result
+from configguard.output.json import format_json_result
 
 
 def version_callback(value: bool) -> None:
@@ -49,10 +52,17 @@ config_file_argument = typer.Argument(
     help="Path to the configuration file.",
 )
 
+output_format_option = typer.Option(
+    "human",
+    "--format",
+    help="Output format.",
+)
+
 
 @app.command()
 def validate(
     config_file: Path = config_file_argument,
+    output_format: Literal["human", "json"] = output_format_option,
 ) -> None:
     """Validate a configuration file."""
 
@@ -73,8 +83,14 @@ def validate(
         validate_configuration(data)
     except ConfigurationValidationError as error:
         result = ValidationResult.from_errors(error.errors)
-        typer.echo(format_human_result(result))
-        raise typer.Exit(code=1) from None
+        exit_code = 1
+    else:
+        result = ValidationResult(valid=True)
+        exit_code = 0
 
-    result = ValidationResult(valid=True)
-    typer.echo(format_human_result(result))
+    if output_format == "json":
+        typer.echo(format_json_result(result))
+    else:
+        typer.echo(format_human_result(result))
+
+    raise typer.Exit(code=exit_code)
