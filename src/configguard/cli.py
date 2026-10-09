@@ -11,6 +11,7 @@ from configguard.config.result import ValidationResult
 from configguard.config.validator import (
     ConfigurationValidationError,
     validate_configuration,
+    validate_strict_configuration,
 )
 from configguard.output.human import format_human_result
 from configguard.output.json import format_json_result
@@ -86,7 +87,11 @@ def validate(
         raise typer.Exit(code=2) from error
 
     try:
-        validate_configuration(data)
+        config = validate_configuration(data)
+
+        if strict:
+            validate_strict_configuration(config)
+
     except ConfigurationValidationError as error:
         result = ValidationResult.from_errors(error.errors)
         exit_code = 1

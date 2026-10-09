@@ -1,8 +1,9 @@
+
 """Configuration validation utilities."""
 
 from typing import Any
 
-from pydantic import ValidationError
+from pydantic import ValidationError, create_model
 from pydantic_core import ErrorDetails
 
 from configguard.config.models import AppConfig
@@ -41,7 +42,7 @@ def validate_configuration(data: dict[str, Any]) -> AppConfig:
 
 
 def validate_strict_configuration(config: AppConfig) -> None:
-    """Validate strict configuration rules.
+    """Validate additional strict configuration rules.
 
     Args:
         config: Validated application configuration.
@@ -54,16 +55,18 @@ def validate_strict_configuration(config: AppConfig) -> None:
         config.application.environment == "production"
         and not config.database.password
     ):
-        raise ConfigurationValidationError(
-            [
-                {
-                    "type": "value_error",
-                    "loc": ("database", "password"),
-                    "msg": (
-                        "Production configurations require a database "
-                        "password in strict mode."
-                    ),
-                    "input": config.database.password,
-                }
-            ]
+        strict_database_model = create_model(
+            "StrictDatabaseConfig",
+            __base__=type(config.database),
+            password=(str, ...),
         )
+        strict_app_model = create_model(
+            "StrictAppConfig",
+            __base__=AppConfig,
+            database=(strict_database_model, ...),
+        )
+
+        try:
+            strict_app_model.model_validate(config.model_dump())
+        except ValidationError as error:
+            raise ConfigurationValidationError(error.errors()) from error

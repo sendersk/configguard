@@ -8,6 +8,7 @@ from configguard.config.models import AppConfig
 from configguard.config.validator import (
     ConfigurationValidationError,
     validate_configuration,
+    validate_strict_configuration,
 )
 
 
@@ -382,3 +383,24 @@ def test_validate_configuration_reports_production_host_error(
         "Production applications must not use localhost"
         in str(errors[0]["msg"])
     )
+
+
+def test_strict_validation_rejects_production_without_password() -> None:
+    """Verify that strict validation rejects production without a password."""
+
+    config = AppConfig(
+        application={
+            "name": "payment-api",
+            "environment": "production",
+        },
+        server={"host": "0.0.0.0", "port": 8080},
+        database={
+            "host": "db.internal",
+            "name": "payments",
+            "username": "payment_user",
+        },
+        logging={"level": "INFO"},
+    )
+
+    with pytest.raises(ConfigurationValidationError):
+        validate_strict_configuration(config)

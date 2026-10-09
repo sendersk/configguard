@@ -308,5 +308,7 @@ logging:
         ["validate", str(config_file), "--strict"],
     )
 
-    assert result.exit_code == 0
-    assert result.stdout.strip() == "Configuration is valid."
+    assert result.exit_code == 1
+    assert "Configuration is invalid." in result.stdout
+    assert "database.password" in result.stdout
+    assert "Input should be a valid string" in result.stdout
