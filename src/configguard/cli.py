@@ -1,5 +1,6 @@
 """Command-line interface for ConfigGuard."""
 
+import logging
 from importlib.metadata import version
 from pathlib import Path
 from typing import Literal
@@ -13,6 +14,7 @@ from configguard.config.validator import (
     validate_configuration,
     validate_strict_configuration,
 )
+from configguard.logging import configure_logging
 from configguard.output.human import format_human_result
 from configguard.output.json import format_json_result
 
@@ -28,6 +30,7 @@ app = typer.Typer(
     name="configguard",
     help="Validate application configuration files before deployment.",
 )
+logger = logging.getLogger(__name__)
 
 
 @app.callback()
@@ -73,6 +76,9 @@ def validate(
 ) -> None:
     """Validate a configuration file."""
 
+    configure_logging()
+    logger.debug("Starting configuration validation.")
+
     if not config_file.is_file():
         typer.echo(
             f"Configuration file does not exist: {config_file}",
@@ -99,9 +105,17 @@ def validate(
         result = ValidationResult(valid=True)
         exit_code = 0
 
+    logger.debug("Configuration file loaded: %s", config_file)
+
     if output_format == "json":
         typer.echo(format_json_result(result))
     else:
         typer.echo(format_human_result(result))
 
+    if result.valid:
+        logger.debug("Configuration validation succeeded.")
+    else:
+        logger.debug("Configuration validation failed.")
+
     raise typer.Exit(code=exit_code)
+
