@@ -3,8 +3,8 @@
 
 from typing import Any
 
-from pydantic import ValidationError, create_model
-from pydantic_core import ErrorDetails
+from pydantic import ValidationError
+from pydantic_core import ErrorDetails, PydanticCustomError
 
 from configguard.config.models import AppConfig
 
@@ -41,6 +41,7 @@ def validate_configuration(data: dict[str, Any]) -> AppConfig:
         raise ConfigurationValidationError(error.errors()) from error
 
 
+
 def validate_strict_configuration(config: AppConfig) -> None:
     """Validate additional strict configuration rules.
 
@@ -55,18 +56,18 @@ def validate_strict_configuration(config: AppConfig) -> None:
         config.application.environment == "production"
         and not config.database.password
     ):
-        strict_database_model = create_model(
-            "StrictDatabaseConfig",
-            __base__=type(config.database),
-            password=(str, ...),
+        error = ValidationError.from_exception_data(
+            "AppConfig",
+            [
+                {
+                    "type": PydanticCustomError(
+                        "strict_validation",
+                        "Production configurations require a database "
+                        "password in strict mode.",
+                    ),
+                    "loc": ("database", "password"),
+                    "input": config.database.password,
+                }
+            ],
         )
-        strict_app_model = create_model(
-            "StrictAppConfig",
-            __base__=AppConfig,
-            database=(strict_database_model, ...),
-        )
-
-        try:
-            strict_app_model.model_validate(config.model_dump())
-        except ValidationError as error:
-            raise ConfigurationValidationError(error.errors()) from error
+        raise ConfigurationValidationError(error.errors())

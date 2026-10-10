@@ -311,4 +311,4 @@ logging:
     assert result.exit_code == 1
     assert "Configuration is invalid." in result.stdout
     assert "database.password" in result.stdout
-    assert "Input should be a valid string" in result.stdout
+    assert "strict mode" in result.stdout
