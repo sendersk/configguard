@@ -312,3 +312,33 @@ logging:
     assert "Configuration is invalid." in result.stdout
     assert "database.password" in result.stdout
     assert "strict mode" in result.stdout
+
+
+def test_validate_command_keeps_human_output_with_logging(
+    tmp_path: Path,
+) -> None:
+    """Verify that logging does not change the human-readable output."""
+
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text(
+        """
+application:
+  name: payment-api
+  environment: production
+server:
+  host: 0.0.0.0
+  port: 8080
+database:
+  host: db.internal
+  name: payments
+  username: payment_user
+logging:
+  level: INFO
+""".strip(),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(app, ["validate", str(config_file)])
+
+    assert result.exit_code == 0
+    assert result.stdout.strip() == "Configuration is valid."
