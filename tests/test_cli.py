@@ -1,5 +1,6 @@
 """Tests for the ConfigGuard CLI."""
 
+import json
 from pathlib import Path
 
 from typer.testing import CliRunner
@@ -388,3 +389,77 @@ def test_validate_command_rejects_json_array_root(
 
     assert result.exit_code == 2
     assert "Configuration root must be a mapping" in result.stderr
+
+
+
+def test_validate_command_returns_json_with_valid_result(
+    tmp_path: Path,
+) -> None:
+    """Verify the structure of a successful JSON validation result."""
+
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text(
+        """
+application:
+  name: payment-api
+  environment: production
+server:
+  host: 0.0.0.0
+  port: 8080
+database:
+  host: db.internal
+  name: payments
+  username: payment_user
+logging:
+  level: INFO
+""".strip(),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(
+        app,
+        ["validate", str(config_file), "--format", "json"],
+    )
+
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    assert payload == {"valid": True, "errors": []}
+
+
+def test_validate_command_returns_json_with_invalid_result(
+    tmp_path: Path,
+) -> None:
+    """Verify the structure of an unsuccessful JSON validation result."""
+
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text(
+        """
+application:
+  name: payment-api
+  environment: production
+server:
+  host: 0.0.0.0
+  port: 70000
+database:
+  host: db.internal
+  name: payments
+  username: payment_user
+logging:
+  level: INFO
+""".strip(),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(
+        app,
+        ["validate", str(config_file), "--format", "json"],
+    )
+
+    assert result.exit_code == 1
+    payload = json.loads(result.stdout)
+    assert payload["valid"] is False
+    assert payload["errors"]
+    assert any(
+        error["loc"] == ["server", "port"]
+        for error in payload["errors"]
+    )
