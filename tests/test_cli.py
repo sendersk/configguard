@@ -342,3 +342,49 @@ logging:
 
     assert result.exit_code == 0
     assert result.stdout.strip() == "Configuration is valid."
+
+
+
+def test_validate_command_rejects_unsupported_file_format(
+    tmp_path: Path,
+) -> None:
+    """Verify that the CLI rejects unsupported configuration formats."""
+
+    config_file = tmp_path / "config.toml"
+    config_file.write_text(
+        'name = "payment-api"',
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(app, ["validate", str(config_file)])
+
+    assert result.exit_code == 2
+    assert "Unsupported configuration format" in result.stderr
+
+
+def test_validate_command_rejects_empty_yaml_file(
+    tmp_path: Path,
+) -> None:
+    """Verify that the CLI rejects an empty YAML configuration file."""
+
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text("", encoding="utf-8")
+
+    result = runner.invoke(app, ["validate", str(config_file)])
+
+    assert result.exit_code == 2
+    assert "Configuration root must be a mapping" in result.stderr
+
+
+def test_validate_command_rejects_json_array_root(
+    tmp_path: Path,
+) -> None:
+    """Verify that the CLI rejects a JSON array as the configuration root."""
+
+    config_file = tmp_path / "config.json"
+    config_file.write_text("[]", encoding="utf-8")
+
+    result = runner.invoke(app, ["validate", str(config_file)])
+
+    assert result.exit_code == 2
+    assert "Configuration root must be a mapping" in result.stderr
