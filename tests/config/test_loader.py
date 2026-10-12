@@ -293,3 +293,34 @@ def test_load_configuration_rejects_json_scalar_root(
         match="Configuration root must be a mapping",
     ):
         load_configuration(path)
+
+
+
+def test_load_configuration_rejects_yaml_null_root(
+    tmp_path: Path,
+) -> None:
+    """Verify that a YAML null root is rejected."""
+
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text("null", encoding="utf-8")
+
+    with pytest.raises(
+        ConfigurationLoadError,
+        match="Configuration root must be a mapping",
+    ):
+        load_configuration(config_file)
+
+
+def test_load_configuration_rejects_json_null_root(
+    tmp_path: Path,
+) -> None:
+    """Verify that a JSON null root is rejected."""
+
+    config_file = tmp_path / "config.json"
+    config_file.write_text("null", encoding="utf-8")
+
+    with pytest.raises(
+        ConfigurationLoadError,
+        match="Configuration root must be a mapping",
+    ):
+        load_configuration(config_file)
