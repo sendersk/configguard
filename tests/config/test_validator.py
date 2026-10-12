@@ -404,3 +404,45 @@ def test_strict_validation_rejects_production_without_password() -> None:
 
     with pytest.raises(ConfigurationValidationError):
         validate_strict_configuration(config)
+
+
+
+def test_strict_validation_accepts_production_with_password() -> None:
+    """Verify that strict validation accepts a production password."""
+
+    config = AppConfig(
+        application={
+            "name": "payment-api",
+            "environment": "production",
+        },
+        server={"host": "0.0.0.0", "port": 8080},
+        database={
+            "host": "db.internal",
+            "name": "payments",
+            "username": "payment_user",
+            "password": "test-password",
+        },
+        logging={"level": "INFO"},
+    )
+
+    validate_strict_configuration(config)
+
+
+def test_strict_validation_accepts_development_without_password() -> None:
+    """Verify that strict validation accepts development without a password."""
+
+    config = AppConfig(
+        application={
+            "name": "payment-api",
+            "environment": "development",
+        },
+        server={"host": "localhost", "port": 8080},
+        database={
+            "host": "db.internal",
+            "name": "payments",
+            "username": "payment_user",
+        },
+        logging={"level": "INFO"},
+    )
+
+    validate_strict_configuration(config)
